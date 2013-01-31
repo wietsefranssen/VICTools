@@ -30,10 +30,11 @@ program VICCONVERT
     !   implicit none
     TYPE(type_NETCDF2VIC) Set_N2V
     TYPE(type_VIC2NETCDF) Set_V2N
+    TYPE(type_VIC2BIGNETCDF) Set_V2BIGN
 
     !! Commandline arguments
     integer                 :: numarg,n
-    character(len = 512)    :: cargs(0:80)
+    character(len = 512)    :: cargs(0:200)
     character(len = 8192)  :: cargx
     integer                 :: nVar
     character(len = 512)    :: cConfigFile,cConfigType
@@ -121,24 +122,25 @@ program VICCONVERT
         print *,'TimeStepSplit:              ', trim(cargs(4)),'    (Lower this number if memory issues occur)'
         print *,'Start year:                 ', trim(cargs(5))
         print *,'Binary input (0=no/1=yes):  ', trim(cargs(6))
-        print *,'VICDataPath+prefix:         ', trim(cargs(7))
-        print *,'NetCDF prefix:              ', trim(cargs(8))
+        print *,'Monthly input (0=no/1=yes): ', trim(cargs(7))
+        print *,'VICDataPath+prefix:         ', trim(cargs(8))
+        print *,'NetCDF prefix:              ', trim(cargs(9))
         do iVar=1,nVar
             WRITE (cVar,10) iVar
-            print *,'(VAR ',trim(adjustl(cVar)),') Variablename:       ', trim(cargs((iVar*7)+2))
-            print *,'(VAR ',trim(adjustl(cVar)),') Long name:          ', trim(cargs((iVar*7)+3))
-            print *,'(VAR ',trim(adjustl(cVar)),') Unit:               ', trim(cargs((iVar*7)+4))
-            print *,'(VAR ',trim(adjustl(cVar)),') Comment 1:          ', trim(cargs((iVar*7)+5))
-            print *,'(VAR ',trim(adjustl(cVar)),') Comment 2:          ', trim(cargs((iVar*7)+6))
-            print *,'(VAR ',trim(adjustl(cVar)),') DataType (f/i/u):   ', trim(cargs((iVar*7)+7))
-            print *,'(VAR ',trim(adjustl(cVar)),') Multiplication:     ', trim(cargs((iVar*7)+8))
-            READ (cargs((iVar*7)+2),12)      Set_V2N%varName(iVar)
-            READ (cargs((iVar*7)+3),12)      Set_V2N%varNameLong(iVar)
-            READ (cargs((iVar*7)+4),12)      Set_V2N%varUnit(iVar)
-            READ (cargs((iVar*7)+5),12)      Set_V2N%varComment1(iVar)
-            READ (cargs((iVar*7)+6),12)      Set_V2N%varComment2(iVar)
-            READ (cargs((iVar*7)+7),12)      Set_V2N%varBinType(iVar)
-            READ (cargs((iVar*7)+8),10)      Set_V2N%varBinMultipl(iVar)
+            print *,'(VAR ',trim(adjustl(cVar)),') Variablename:       ', trim(cargs((iVar*7)+3))
+            print *,'(VAR ',trim(adjustl(cVar)),') Long name:          ', trim(cargs((iVar*7)+4))
+            print *,'(VAR ',trim(adjustl(cVar)),') Unit:               ', trim(cargs((iVar*7)+5))
+            print *,'(VAR ',trim(adjustl(cVar)),') Comment 1:          ', trim(cargs((iVar*7)+6))
+            print *,'(VAR ',trim(adjustl(cVar)),') Comment 2:          ', trim(cargs((iVar*7)+7))
+            print *,'(VAR ',trim(adjustl(cVar)),') DataType (f/i/u):   ', trim(cargs((iVar*7)+8))
+            print *,'(VAR ',trim(adjustl(cVar)),') Multiplication:     ', trim(cargs((iVar*7)+9))
+            READ (cargs((iVar*7)+3),12)      Set_V2N%varName(iVar)
+            READ (cargs((iVar*7)+4),12)      Set_V2N%varNameLong(iVar)
+            READ (cargs((iVar*7)+5),12)      Set_V2N%varUnit(iVar)
+            READ (cargs((iVar*7)+6),12)      Set_V2N%varComment1(iVar)
+            READ (cargs((iVar*7)+7),12)      Set_V2N%varComment2(iVar)
+            READ (cargs((iVar*7)+8),12)      Set_V2N%varBinType(iVar)
+            READ (cargs((iVar*7)+9),10)      Set_V2N%varBinMultipl(iVar)
         enddo
         print *,'**********************************************************'
         READ (cargs(2),10)       Set_V2N%timeStart
@@ -146,10 +148,11 @@ program VICCONVERT
         READ (cargs(4),10)       Set_V2N%numMaxTimeSteps
         READ (cargs(5),12)       Set_V2N%yearStart
         READ (cargs(6),10)       Set_V2N%binary
-        READ (cargs(7),12)       Set_V2N%outPath
-        READ (cargs(8),12)       Set_V2N%NetCDFPrefix
+        READ (cargs(7),10)       Set_V2N%monthly
+        READ (cargs(8),12)       Set_V2N%outPath
+        READ (cargs(9),12)       Set_V2N%NetCDFPrefix
 
-        if (numArg < 11) then
+        if (numArg < 12) then
 
             print *,'Some commandline arguments are missing!'
             print *,''
@@ -169,12 +172,26 @@ program VICCONVERT
             stop
         endif
         CALL VIC2netcdf(Set_V2N, cConfigFile, nVar)
+    elseif (TRIM(cConfigType) == 'VIC2bignetcdf'     ) then
+        !READ(cargs(1),*)  cConfigFile
+        nVar=(numArg-7)/7
+        print *,'Number arguments given: ', numArg
+        print *,'Number of VIC-Variables:', nVar
+        print *,'**********************************************************'
+        print *,'VIC2netcdf:                 ', trim(cargs(1))
+        print *,'Configfile:                 ', trim(cargs(2))
+
+        READ (cargs(2),12)      cConfigFile
+
+        CALL VIC2bignetcdf(Set_V2BIGN, cConfigFile)
 
     else
         Print *,'The first argument must be: '
         print *,'"netcdf2VIC"'
         print *,'or'
         print *,'"VIC2netcdf"'
+        print *,'or'
+        print *,'"VIC2bignetcdf"'
         print *,'or'
         print *,'...'
     endif

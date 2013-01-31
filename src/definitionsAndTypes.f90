@@ -52,6 +52,7 @@ MODULE definitionsAndTypes
         REAL                :: latMax
         REAL                :: resolution
         INTEGER             :: binary
+        INTEGER             :: monthly
         CHARACTER(len = 256)       :: ncFile(50)
         CHARACTER(len = 256)       :: binFile(50)
         CHARACTER(len = 256)       :: varName(50)
@@ -66,4 +67,14 @@ MODULE definitionsAndTypes
         INTEGER             :: nVar
     END TYPE type_VIC2NETCDF
 
+    TYPE :: type_VIC2BIGNETCDF
+        REAL                :: lonMin
+        REAL                :: lonMax
+        REAL                :: latMin
+        REAL                :: latMax
+        REAL                :: resolution
+        CHARACTER(len = 256)       :: NetCDFPrefix
+        CHARACTER(len = 4)             :: yearStart
+        END TYPE type_VIC2BIGNETCDF
+    
 END MODULE definitionsAndTypes

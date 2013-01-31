@@ -113,6 +113,7 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     !print *,'1961',LEAP(1961)
     !print *,'1962',LEAP(1962)
 
+
     !!!!!!!!!!!!!!!!!!!!! READING GRIDFILE AND RE-ORDER GRID ARRAY!!!!!!!!!!!!!!!!!!
     !** Count number of cells in mask
     xStart = 1
@@ -257,6 +258,7 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
             print *,'re-order array...'
             if(.not.allocated(ncData))              allocate(ncData          (nLon,nLat,nTimePart))
             ncData          (:,:,:) = noNadaValue
+
             do iCel=1,nCells
                 iLat = nLat - ((aLatCells(iCel) - Set_V2N%latMin) / Set_V2N%resolution)
                 iLon = ((aLonCells(iCel) - Set_V2N%lonMin) / Set_V2N%resolution)+1
@@ -265,8 +267,13 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
             !!!!!!!!!!!!!!!!!!!!! RE-ORDER ARRAY END !!!!!!!!!!!!!!!!!!
 
             !!!!!!!!!!!!!!!!!!!!! WRITING DATAFILE !!!!!!!!!!!!!!!!!!
-            ncFileName = trim(Set_V2N%NetCDFPrefix)//trim(Set_V2N%varName(iVar)) &
-            //'_daily_'//Set_V2N%yearStart//'.nc'
+            if (Set_V2N%monthly == 1) then
+              ncFileName = trim(Set_V2N%NetCDFPrefix)//trim(Set_V2N%varName(iVar)) &
+              //'_monthly_'//Set_V2N%yearStart//'.nc'
+            else
+              ncFileName = trim(Set_V2N%NetCDFPrefix)//trim(Set_V2N%varName(iVar)) &
+              //'_daily_'//Set_V2N%yearStart//'.nc'
+            endif
             if (iPart .eq. 1) then
                 ! CREATE NETCDF-FILE
                 print *,'Creating NetCDF data file:      ', trim(ncFileName)
@@ -289,7 +296,11 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
                 call check( nf90_put_att(ncid, varidLat, "long_name", "latitude") )
                 call check( nf90_put_att(ncid, varidLat, "units", "degrees_north") )
                 call check( nf90_put_att(ncid, varidLat, "standard_name", "latitude") )
-                call check( nf90_put_att(ncid, varidTime,"units", "days since "//Set_V2N%yearStart//"-01-01") )
+                if (Set_V2N%monthly == 1) then
+                  call check( nf90_put_att(ncid, varidTime,"units", "months since "//Set_V2N%yearStart//"-01-01") )
+                else
+                  call check( nf90_put_att(ncid, varidTime,"units", "days since "//Set_V2N%yearStart//"-01-01") )
+                endif
                 call check( nf90_put_att(ncid, varidTime,"calendar", "standard") )
                 call check( nf90_put_att(ncid, varidData, "short_field_name", trim(Set_V2N%varName(iVar))) )
                 call check( nf90_put_att(ncid, varidData, "long_field_name", trim(Set_V2N%varNameLong(iVar))) )
