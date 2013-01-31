@@ -15,35 +15,33 @@ MODEL=$(ROOT)/src
 # Define make (gnu make works best).
 MAKE=/usr/bin/make
 CMACH=PC_LINUX1
-F_COMP=gfortran44
-#F_COMP=ifort
-LOADER=gfortran44
-#LOADER=ifort -shared-intel
+F_COMP=gfortran
+LOADER=gfortran
 ARCHIVE=ar rs
 F_DEBUGFLAGS=-g -DPC_LINUX1
 F_OPTFLAGS=-O3 -DPC_LINUX1
 
-#LIBS=-L/share/apps/netcdf/netcdf-intel-4.1.3/lib -lnetcdff
-LIBS=-L/share/apps/netcdf/netcdf-gnu-4.1.3/lib -lnetcdff
-#INCLUDES  = -I/share/apps/netcdf/netcdf-intel-4.1.3/include
-INCLUDES  = -I/share/apps/netcdf/netcdf-gnu-4.1.3/include
+LIBS=-L/share/apps/gnu/gnu-4.7.1_package/netcdf-4.1.3/lib -lnetcdff
+#LIBS=-L$NETCDF_LIB -lnetcdff
+INCLUDES  = -I/share/apps/gnu/gnu-4.7.1_package/netcdf-4.1.3/include
+#INCLUDES  = -I$NETCDF_INCL
 
 include ./rules.mk
 
 # Define archive and executable names.
-
-BASE=./bin/VICCONVERT
-EXE=$(BASE)
+BASEPATH=./bin
+BASE=$(BASEPATH)/VICCONVERT
+EXE=$(BASE).exe
 ARC=$(BASE).a
-
 
 include ./objects.mk
       
 # Define targets.
 
-all: $(EXE)
+all: mkdirs $(EXE)
 
-$(EXE):$(ARC) $(MAIN_SRC) FORCE
+$(EXE): $(ARC) $(MAIN_SRC) FORCE
+
 	@echo ""
 	$(LOADER) -o $(EXE) VICCONVERT.o $(LOADER_OPTS) $(ARC) \
 	$(LIBS)
@@ -61,6 +59,9 @@ $(ARC): $(OBJ)
 
 FORCE:
 
+mkdirs:
+	mkdir -p $(BASEPATH)
+
 check: FORCE
 	@echo ""
 	check
@@ -77,4 +78,3 @@ clean:
 	@echo ""
 
 F_COMMAND = $(F_COMP) -c $(F_OPTFLAGS) $(INCLUDES)
-VICConvert = /home/frans004/VICCONVERT
