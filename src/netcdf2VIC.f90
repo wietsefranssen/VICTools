@@ -58,7 +58,8 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
     integer(kind = 4)               :: nTimeTotal, nTimePart, nParts, iPart
     integer(kind = 4), allocatable  ::ncStart(:,:)
     integer(kind = 4), allocatable  ::ncCount(:,:)
-
+    integer                 :: startPos,startPosPart1,currPos,poging
+INTEGER*4 ftell
     !! Configs:
     Set_N2V%lonMin              = -179.75
     Set_N2V%lonMax              = 179.75
@@ -225,15 +226,56 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
                 write(cLat, "(F8.2)") dataMask(iCel,2)
                 outFileName = trim(Set_N2V%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
                 !  print *, 'cell: ', iCel, ' of ', ncells, 'lat: ' , trim(adjustl(cLat)), ' lon: ', trim(adjustl(cLon))
-                if (mod(iCel,(nCells/20)).eq.0) then
-                    iPercent = 100/real((real(nCells)/real(iCel)))
-                    print *, iPercent ,'% Completed  (cell: ', iCel, ' of ', ncells, ')' ! , 'lat: ' , trim(adjustl(cLat)), ' lon: ', trim(adjustl(cLon))
-                endif
-                open (unit = 30, file = outFileName, form='unformatted',ACCESS='STREAM',POSITION='APPEND')
+               if (mod(iCel,(nCells/20)).eq.0) then
+                   iPercent = 100/real((real(nCells)/real(iCel)))
+                   print *, iPercent ,'% Completed  (cell: ', iCel, ' of ', ncells, ')' ! , 'lat: ' , trim(adjustl(cLat)), ' lon: ', trim(adjustl(cLon))
+               endif
+       !       open (unit = 30, file = outFileName, form='unformatted',ACCESS='STREAM')
+                !open (unit = 30, file = outFileName, form='unformatted',ACCESS='STREAM',POSITION='APPEND')
+                !** Skip till correct location (to change if other formats than Int are used!)
+!startPos= ftell(30)
+!!                if (iPart .gt. 1) then
+!!                    open (unit = 30, file = outFileName, form='unformatted',ACCESS='STREAM',POSITION='APPEND')
+                    !call ftell(30,startPos)
+                    !startPos= startPos -1
+
+                    !read (30,pos=startPos) iData
+!                    startPos=-1
+!!                    startPos=startPosPart1
+!!                    do iVar=1,nVar
+!!                            startPos=((ncStart(iPart,3)-1+Set_N2V%timeStart-1)*2) + startPos
+!!                    enddo
+!!                    read (30,pos=startPos) iData
+!!                else
+                    open (unit = 30, file = outFileName, form='unformatted',ACCESS='STREAM',POSITION='APPEND')
+!!                    if (iCel .eq. 1) then
+!!                  call ftell(30,startPosPart1)
+!!                        startPosPart1 = startPosPart1 -1
+!!                    endif
+!print *,'hoi:  ', startPos
+!!                endif
+
                 do iTime=1,nTimePart
                     do iVar=1,nVar
                         iData = int(dataArray(iCel,iVar,iTime)*Set_N2V%varBinMultipl(iVar))
+                      !  if (iData .lt. 0) then
+                      !      iData = 0
+                      !  elseif (iData .gt. 65535) then
+                      !      idata = 0
+                      !  endif
                         write (30) iData
+                        currPos = FTELL(30)
+                        poging =1
+                        do while (MOD(currPos, 2) .gt. 0)
+                            !        print *, 'Something went wrong!'
+                            print *, 'Poging:', poging, 'currPos/var/time:', currPos,'/',iVar,'/',iTime,'/', 'Value:', iData, 'file:', trim(adjustl(cLat)),'_',trim(adjustl(cLon))
+                            currPos = currPos - 1
+                            write (30,pos=currPos) iData
+                            
+                            poging = poging +1
+                     !       print *, 'currPosNew                = ', currPos
+                        enddo
+                        
                     enddo
                 enddo
                 close(30)
@@ -243,7 +285,7 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
             !!!!!!!!!!!!!!!!!!!!! CREATING ASCII FILE !!!!!!!!!!!!!!!!!!
             cFormatASCII = "f16.8"
             do iVar = 1,nVar-1
-                cFormatASCII = trim(cFormatASCII)//",f16.8"
+                cFormatASCII = trim(cFormatASCII)//",f16.10"
             enddo
             cFormatASCII = '('//trim(cFormatASCII)//')'
             do iCel=1,nCells

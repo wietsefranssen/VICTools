@@ -33,7 +33,8 @@ program VICCONVERT
 
     !! Commandline arguments
     integer                 :: numarg,n
-    character(len = 8192)   :: cArg, cargs(0:40),cargx
+    character(len = 512)    :: cargs(0:80)
+    character(len = 8192)  :: cargx
     integer                 :: nVar
     character(len = 512)    :: cConfigFile,cConfigType
     character(len = 512)    :: cLon,cLat
@@ -60,7 +61,8 @@ program VICCONVERT
         print *,'Start Time:                 ', trim(cargs(2))
         print *,'End Time:                   ', trim(cargs(3))
         print *,'TimeStepSplit:              ', trim(cargs(4)),'    (Lower this number if memory issues occur)'
-        print *,'Binary output (0=no/1=yes): ', trim(cargs(5))
+        print *,'Options:                    ', trim(cargs(5))
+        print *,'  (0=ascii/1=binary/3=routing,skip3,.day) '
         print *,'Outpath+prefix:             ', trim(cargs(6))
         print *,'Mask filename:              ', trim(cargs(7))
         print *,'Variablename of maskfile:   ', trim(cargs(8))
@@ -108,7 +110,7 @@ program VICCONVERT
 
     elseif (TRIM(cConfigType) == 'VIC2netcdf'     ) then
         !READ(cargs(1),*)  cConfigFile
-        nVar=(numArg-7)/2
+        nVar=(numArg-7)/7
 
         print *,'Number arguments given: ', numArg
         print *,'Number of VIC-Variables:', nVar
@@ -117,23 +119,35 @@ program VICCONVERT
         print *,'Start Time:                 ', trim(cargs(2))
         print *,'End Time:                   ', trim(cargs(3))
         print *,'TimeStepSplit:              ', trim(cargs(4)),'    (Lower this number if memory issues occur)'
-        print *,'Binary input (0=no/1=yes):  ', trim(cargs(5))
-        print *,'VICDataPath+prefix:         ', trim(cargs(6))
-        print *,'NetCDF prefix:              ', trim(cargs(7))
+        print *,'Start year:                 ', trim(cargs(5))
+        print *,'Binary input (0=no/1=yes):  ', trim(cargs(6))
+        print *,'VICDataPath+prefix:         ', trim(cargs(7))
+        print *,'NetCDF prefix:              ', trim(cargs(8))
         do iVar=1,nVar
             WRITE (cVar,10) iVar
-            print *,'(VAR ',trim(adjustl(cVar)),') Variablename:       ', trim(cargs((iVar*2)+6))
-            print *,'(VAR ',trim(adjustl(cVar)),') Multiplication:     ', trim(cargs((iVar*2)+7))
-            READ (cargs((iVar*2)+6),12)       Set_V2N%varName(iVar)
-            READ (cargs((iVar*2)+7),10)       Set_V2N%varBinMultipl(iVar)
+            print *,'(VAR ',trim(adjustl(cVar)),') Variablename:       ', trim(cargs((iVar*7)+2))
+            print *,'(VAR ',trim(adjustl(cVar)),') Long name:          ', trim(cargs((iVar*7)+3))
+            print *,'(VAR ',trim(adjustl(cVar)),') Unit:               ', trim(cargs((iVar*7)+4))
+            print *,'(VAR ',trim(adjustl(cVar)),') Comment 1:          ', trim(cargs((iVar*7)+5))
+            print *,'(VAR ',trim(adjustl(cVar)),') Comment 2:          ', trim(cargs((iVar*7)+6))
+            print *,'(VAR ',trim(adjustl(cVar)),') DataType (f/i/u):   ', trim(cargs((iVar*7)+7))
+            print *,'(VAR ',trim(adjustl(cVar)),') Multiplication:     ', trim(cargs((iVar*7)+8))
+            READ (cargs((iVar*7)+2),12)      Set_V2N%varName(iVar)
+            READ (cargs((iVar*7)+3),12)      Set_V2N%varNameLong(iVar)
+            READ (cargs((iVar*7)+4),12)      Set_V2N%varUnit(iVar)
+            READ (cargs((iVar*7)+5),12)      Set_V2N%varComment1(iVar)
+            READ (cargs((iVar*7)+6),12)      Set_V2N%varComment2(iVar)
+            READ (cargs((iVar*7)+7),12)      Set_V2N%varBinType(iVar)
+            READ (cargs((iVar*7)+8),10)      Set_V2N%varBinMultipl(iVar)
         enddo
         print *,'**********************************************************'
         READ (cargs(2),10)       Set_V2N%timeStart
         READ (cargs(3),10)       Set_V2N%timeEnd
         READ (cargs(4),10)       Set_V2N%numMaxTimeSteps
-        READ (cargs(5),10)       Set_V2N%binary
-        READ (cargs(6),12)       Set_V2N%outPath
-        READ (cargs(7),12)       Set_V2N%NetCDFPrefix
+        READ (cargs(5),12)       Set_V2N%yearStart
+        READ (cargs(6),10)       Set_V2N%binary
+        READ (cargs(7),12)       Set_V2N%outPath
+        READ (cargs(8),12)       Set_V2N%NetCDFPrefix
 
         if (numArg < 11) then
 

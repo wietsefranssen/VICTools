@@ -35,12 +35,14 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     integer                 :: nLon,nLat,nTime,nVar,nBand
     integer                 :: nLonTmp,nLatTmp,nTimeTmp
     integer                 :: xStart,xEnd,yStart,yEnd
+    integer                 :: startPos
     real                    :: noNadaValue
     real                    :: rLat,rLon
     character(len = 8)      :: cLon, cLat
     character(len = 256)    :: gridVICInFile, gridVICOutFile
     character(len = 256)    :: cFormatASCII
     character(len = 512)    :: cConfigFile
+    character(len = 10)      :: cYear
     character(len = 32)     :: cDummy1,cDummy2,cDummy3,cDummy4,cDummy5
     ! NetCDF:
     character(len = 256)    :: ncFileName,outFileName
@@ -56,11 +58,13 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     real(kind = 4), allocatable     :: dataMask(:,:)
     integer(kind = 4), allocatable  :: parts(:)
     integer(kind = 2)               :: iData
+    real(kind = 4)                  :: fData
     integer(kind = 4)               :: nTimeTotal, nTimePart, nParts, iPart
-    integer(kind = 4), allocatable  ::ncStart(:,:)
-    integer(kind = 4), allocatable  ::ncCount(:,:)
+    integer(kind = 4), allocatable  :: ncStart(:,:)
+    integer(kind = 4), allocatable  :: ncCount(:,:)
     real(kind = 4), allocatable     :: dataDummy(:)
     LOGICAL :: file_exists
+    LOGICAL  :: LEAP
 
     !! Configs:
     Set_V2N%lonMin              = -179.75
@@ -74,7 +78,8 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
 
     nLon                = ((Set_V2N%lonMax - Set_V2N%lonMin) / Set_V2N%resolution) + 1
     nLat                = ((Set_V2N%latMax - Set_V2N%latMin) / Set_V2N%resolution) + 1
-
+    ! write(cYear,(I)) Set_V2N%yearStart
+    !  read (cYear,*) Set_V2N%yearStart
     !! Define Number of timesteps per part
     nTimeTotal          = Set_V2N%timeEnd - Set_V2N%timeStart + 1
     nParts = ceiling(real(nTimeTotal) / real(Set_V2N%numMaxTimeSteps))
@@ -92,7 +97,7 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     parts(nParts) = nTimeTotal- (Set_V2N%numMaxTimeSteps * (nParts-1))
     ncCount(nParts,3) = parts(nParts)
     !! Define Number of timesteps per part END
-
+    !print *, 'end:',Set_V2N%timeEnd , 'start',  Set_V2N%timeStart
     print *,'LonMin:                                 ', Set_V2N%lonMin
     print *,'LonMax:                                 ', Set_V2N%lonMax
     print *,'LatMin:                                 ', Set_V2N%latMin
@@ -103,7 +108,10 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     print *,'Number of timesteps:                    ', nTimeTotal
     print *,'Number(max) timesteps per part:         ', Set_V2N%numMaxTimeSteps
     print *,'Number of parts:                        ', nParts
-    !print *,''
+        !print *,''
+    !print *,'1960',LEAP(1960)
+    !print *,'1961',LEAP(1961)
+    !print *,'1962',LEAP(1962)
 
     !!!!!!!!!!!!!!!!!!!!! READING GRIDFILE AND RE-ORDER GRID ARRAY!!!!!!!!!!!!!!!!!!
     !** Count number of cells in mask
@@ -113,15 +121,22 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
     yEnd   = nLat
 
     !** Count number of cells (number of VIC files)
+    print *,'Counting cells...'
     open (unit = 11, file = './latlon.tmp')
     iCel = 1
     do iLon=xStart,xEnd
-        do iLat=yStart,yEnd
+      !   print *,iLon
+         do iLat=yStart,yEnd
             rLon = Set_V2N%lonMin + ((iLon-1)*Set_V2N%resolution)
             rLat = Set_V2N%latMin + ((iLat-1)*Set_V2N%resolution)
             write(cLon, "(F8.2)") rLon
             write(cLat, "(F8.2)") rLat
-            outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
+            if (Set_V2N%binary == 3)  then ! if routing output
+                outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))//'.day'
+            else
+                outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
+            endif
+!            outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
             INQUIRE(FILE=trim(adjustl(outFileName)), EXIST=file_exists)   ! file_exists will be TRUE if the file
             if(file_exists) then
                 write (11,*) rLat,rLon
@@ -143,7 +158,8 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
         aLon(iLon) = Set_V2N%lonMin + ((iLon -1) * Set_V2N%resolution)
     enddo
     do iLat=yStart,yEnd
-        aLat(iLat) = Set_V2N%latMin + ((iLat -1) * Set_V2N%resolution)
+        !        aLat(iLat) = Set_V2N%latMin + ((iLat -1) * Set_V2N%resolution)
+        aLat(iLat) = Set_V2N%latMax - ((iLat -1) * Set_V2N%resolution)
     enddo
     do iTime=1,nTimeTotal
         aTime(iTime) = iTime -1
@@ -179,14 +195,29 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
                 endif
                 open (unit = 14, file = outFileName, form='unformatted',ACCESS='STREAM')
                 !** Skip till correct location (to change if other formats than Int are used!)
-                if (iPart .gt. 1) then
-                   read (14,pos=((ncStart(iPart,3)-1)*nvar*2)-1) iData
+                if (Set_V2N%timeStart .gt. 1 .or. iPart .gt. 1) then
+                    startPos=-1
+                    do iVar=1,nVar
+                        if (trim(Set_V2N%varBinType(iVar)) .eq. 'f') then
+                            startPos=((ncStart(iPart,3)-1+Set_V2N%timeStart-1)*4) + startPos
+                        elseif (trim(Set_V2N%varBinType(iVar)) .eq. 'i') then
+                            startPos=((ncStart(iPart,3)-1+Set_V2N%timeStart-1)*2) + startPos
+                            !print *, 'Start', startPos, Set_V2N%timeStart, ncStart(iPart,3),Set_V2N%timeStart+(ncStart(iPart,3)-1) &
+                            !,nTimePart
+                        endif
+                    enddo
+                    read (14,pos=startPos) iData
                 endif
 
                 do iTime=1,nTimePart
                     do iVar=1,nVar
-                        read (14) iData
-                        dataArray(iCel,iVar,iTime) = real(iData)/Set_V2N%varBinMultipl(iVar)
+                        if (trim(Set_V2N%varBinType(iVar)) .eq. 'f') then
+                            read (14) fData
+                            dataArray(iCel,iVar,iTime) = fData/Set_V2N%varBinMultipl(iVar)
+                        elseif (trim(Set_V2N%varBinType(iVar)) .eq. 'i') then
+                            read (14) iData
+                            dataArray(iCel,iVar,iTime) = real(iData)/Set_V2N%varBinMultipl(iVar)
+                        endif
                     enddo
                 enddo
                 close(14)
@@ -197,14 +228,19 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
             do iCel=1,nCells
                 write(cLon, "(F8.2)") aLonCells(iCel)
                 write(cLat, "(F8.2)") aLatCells(iCel)
-                outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
+                if (Set_V2N%binary == 3)  then ! if routing output
+                    outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))//'.day'
+                else
+                    outFileName = trim(Set_V2N%outPath)//trim(adjustl(cLat))//'_'//trim(adjustl(cLon))
+                endif
                 if (mod(iCel,(nCells/20)).eq.0) then
                     iPercent = 100/real((real(nCells)/real(iCel)))
                     print *, iPercent ,'% Completed  (cell: ', iCel, ' of ', ncells, ')' ! , 'lat: ' , trim(adjustl(cLat)), ' lon: ', trim(adjustl(cLon))
                 endif
                 open (unit = 13, file = outFileName)
-                if (iPart .gt. 1) then
-                    do iSkip=1,(ncStart(iPart,3)-1)
+
+                if (Set_V2N%timeStart .gt. 1 .or. iPart .gt. 1) then
+                    do iSkip=1,(ncStart(iPart,3)-1+Set_V2N%timeStart-1)
                         read (13,*) dataDummy(:)
                     enddo
                 endif
@@ -222,46 +258,51 @@ SUBROUTINE vic2netcdf(Set_V2N, cConfigFile, nVar)
             if(.not.allocated(ncData))              allocate(ncData          (nLon,nLat,nTimePart))
             ncData          (:,:,:) = noNadaValue
             do iCel=1,nCells
-                iLat = ((aLatCells(iCel) - Set_V2N%latMin) / Set_V2N%resolution)+1
+                iLat = nLat - ((aLatCells(iCel) - Set_V2N%latMin) / Set_V2N%resolution)
                 iLon = ((aLonCells(iCel) - Set_V2N%lonMin) / Set_V2N%resolution)+1
                 ncData          (iLon,iLat,:) = dataArray(iCel,iVar,:)
             enddo
-
             !!!!!!!!!!!!!!!!!!!!! RE-ORDER ARRAY END !!!!!!!!!!!!!!!!!!
 
             !!!!!!!!!!!!!!!!!!!!! WRITING DATAFILE !!!!!!!!!!!!!!!!!!
-            ncFileName = trim(Set_V2N%NetCDFPrefix)//trim(Set_V2N%varName(iVar))//'.nc'
+            ncFileName = trim(Set_V2N%NetCDFPrefix)//trim(Set_V2N%varName(iVar)) &
+            //'_daily_'//Set_V2N%yearStart//'.nc'
             if (iPart .eq. 1) then
                 ! CREATE NETCDF-FILE
                 print *,'Creating NetCDF data file:      ', trim(ncFileName)
-                call check( nf90_create(ncFileName, nf90_netcdf4, ncid) )
+                call check( nf90_create(ncFileName, nf90_classic_model, ncid) )
+!                call check( nf90_create(ncFileName, nf90_netcdf4, ncid) )
                 ! Define the dimensions. NetCDF will hand back an ID for each.
                 call check( nf90_def_dim(ncid, "lon", nLon, dimidLon) )
                 call check( nf90_def_dim(ncid, "lat", nLat, dimidLat) )
                 call check( nf90_def_dim(ncid, "time", nf90_unlimited, dimidTime) )
                 ! Define the variables. NetCDF will hand back an ID for each.
-                call check( nf90_def_var(ncid, "lon", nf90_double, dimidLon, varidLon) )
-                call check( nf90_def_var(ncid, "lat", nf90_double, dimidLat, varidLat) )
-                call check( nf90_def_var(ncid, "time", nf90_double, dimidTime, varidTime) )
+                call check( nf90_def_var(ncid, "lon", nf90_float, dimidLon, varidLon) )
+                call check( nf90_def_var(ncid, "lat", nf90_float, dimidLat, varidLat) )
+                call check( nf90_def_var(ncid, "time", nf90_float, dimidTime, varidTime) )
                 call check( nf90_def_var(ncid, trim(Set_V2N%varName(iVar)), nf90_float, &
                 (/ dimidLon, dimidLat, dimidTime /), varidData) )
                 ! Add attributes to the variables.
                 call check( nf90_put_att(ncid, varidLon, "long_name", "longitude") )
                 call check( nf90_put_att(ncid, varidLon, "units", "degrees_east") )
                 call check( nf90_put_att(ncid, varidLon, "standard_name", "longitude") )
-                call check( nf90_put_att(ncid, varidLon, "axis", "X") )
                 call check( nf90_put_att(ncid, varidLat, "long_name", "latitude") )
                 call check( nf90_put_att(ncid, varidLat, "units", "degrees_north") )
                 call check( nf90_put_att(ncid, varidLat, "standard_name", "latitude") )
-                call check( nf90_put_att(ncid, varidLat, "axis", "Y") )
-                call check( nf90_put_att(ncid, varidTime,"units", "months since 1901-01-01 00:00:00") ) !TODO
+                call check( nf90_put_att(ncid, varidTime,"units", "days since "//Set_V2N%yearStart//"-01-01") )
                 call check( nf90_put_att(ncid, varidTime,"calendar", "standard") )
-                call check( nf90_put_att(ncid, varidData, "long_name", "total runoff") ) !TODO
-                call check( nf90_put_att(ncid, varidData, "units", "kg m-2 s-1") ) !TODO
+                call check( nf90_put_att(ncid, varidData, "short_field_name", trim(Set_V2N%varName(iVar))) )
+                call check( nf90_put_att(ncid, varidData, "long_field_name", trim(Set_V2N%varNameLong(iVar))) )
+                call check( nf90_put_att(ncid, varidData, "units", trim(Set_V2N%varUnit(iVar))) )
                 call check( nf90_put_att(ncid, varidData, "_FillValue", noNadaValue) )
-                call check( nf90_put_att(ncid, varidData, "comment", "total blabla bla runoff") ) ! TODO
-                call check( nf90_put_att(ncid, nf90_global, "title", &
-                "impact model output for VIC4.1.2 bias corrected climate 0.5 degree grid") ) ! TODO
+                call check( nf90_put_att(ncid, nf90_global, "title", "Impact model output for ISI-MIP") ) ! TODO
+                !"impact model output for VIC4.1.2 bias corrected climate 0.5 degree grid") ) ! TODO
+                call check( nf90_put_att(ncid, nf90_global, "comment1", &
+                trim(Set_V2N%varComment1(iVar))) )
+                call check( nf90_put_att(ncid, nf90_global, "comment2", &
+                trim(Set_V2N%varComment2(iVar))) )
+                call check( nf90_put_att(ncid, nf90_global, "institution", "WUR") ) ! TODO
+                call check( nf90_put_att(ncid, nf90_global, "contact", "wietse.franssen@wur.nl, iha@nve.no") ) ! TODO
                 !** End defititions
                 call check( nf90_enddef(ncid) )
                 !** Fill the variables lon and lat and time
@@ -301,7 +342,17 @@ end
 !!!! NETCDF CHECK ROUTINE END !!!!
 
 !!!!!!!!!!!!!!! SOME FUNCTIONS !!!!!!!!!!!!!!!!!!
+FUNCTION LEAP (YEAR) RESULT (LEAPFLAG)
 
+    IMPLICIT NONE
+
+    INTEGER :: YEAR
+    LOGICAL :: LEAPFLAG
+
+    LEAPFLAG = .FALSE.
+    IF (MOD(YEAR,4) .EQ. 0)   LEAPFLAG = .TRUE.
+    IF (MOD(YEAR,100) .EQ. 0) LEAPFLAG = .FALSE.
+    IF (MOD(YEAR,400) .EQ. 0) LEAPFLAG = .TRUE.
+    RETURN
+END
 !!!!!!!!!!!!!!! SOME FUNCTIONS END !!!!!!!!!!!!!!!!!!
-
-

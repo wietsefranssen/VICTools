@@ -37,8 +37,14 @@ MODULE definitionsAndTypes
         CHARACTER(len = 256)       :: NetCDFPrefix
         CHARACTER(len = 256)       :: dataVICInFile(50)
         INTEGER             :: varBinMultipl(50)
+        CHARACTER(len = 1)             :: varBinType(50)
+        CHARACTER(len = 256)       :: varNameLong(50)
+        CHARACTER(len = 256)       :: varUnit(50)
+        CHARACTER(len = 256)       :: varComment1(50)
+        CHARACTER(len = 256)       :: varComment2(50)
         INTEGER             :: timeStart
         INTEGER             :: timeEnd
+        CHARACTER(len = 4)             :: yearStart
         INTEGER             :: numMaxTimeSteps
         REAL                :: lonMin
         REAL                :: lonMax
