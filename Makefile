@@ -21,10 +21,8 @@ ARCHIVE=ar rs
 F_DEBUGFLAGS=-g -DPC_LINUX1
 F_OPTFLAGS=-O3 -DPC_LINUX1
 
-LIBS=-L/share/apps/gnu/gnu-4.7.1_package/netcdf-4.1.3/lib -lnetcdff
-#LIBS=-L$NETCDF_LIB -lnetcdff
-INCLUDES  = -I/share/apps/gnu/gnu-4.7.1_package/netcdf-4.1.3/include
-#INCLUDES  = -I$NETCDF_INCL
+LIBS     := -L$(shell echo $(NETCDF_LIB)) -lnetcdff
+INCLUDES := -I$(shell echo $(NETCDF_INCL))
 
 include ./rules.mk
 
