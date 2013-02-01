@@ -18,7 +18,7 @@ CMACH=PC_LINUX1
 F_COMP=gfortran
 LOADER=gfortran
 ARCHIVE=ar rs
-F_DEBUGFLAGS=-g -DPC_LINUX1
+F_DEBUGFLAGS=-g 
 F_OPTFLAGS=-O3 -DPC_LINUX1
 
 LIBS     := -L$(shell echo $(NETCDF_LIB)) -lnetcdff
@@ -32,8 +32,11 @@ BASE=$(BASEPATH)/VICCONVERT
 EXE=$(BASE).exe
 ARC=$(BASE).a
 
+F_COMMAND = $(F_COMP) -c $(F_OPTFLAGS) $(INCLUDES)
+
 include ./objects.mk
-      
+  
+
 # Define targets.
 
 all: mkdirs $(EXE)
@@ -54,6 +57,8 @@ $(MAIN_SRC): FORCE
 
 $(ARC): $(OBJ)
 
+debug: F_COMMAND = $(F_COMP) -c $(F_DEBUGFLAGS) $(INCLUDES)
+debug: all
 
 FORCE:
 
@@ -75,4 +80,4 @@ clean:
 	rm -f $(ARC) $(EXE) *.o *.mod *.f *.stb
 	@echo ""
 
-F_COMMAND = $(F_COMP) -c $(F_OPTFLAGS) $(INCLUDES)
+	
