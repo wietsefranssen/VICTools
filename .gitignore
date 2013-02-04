@@ -1,6 +1,7 @@
 # Specific        #
 ###################
 bin/
+nbproject/
 
 # Compiled source #
 ###################
