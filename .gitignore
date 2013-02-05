@@ -1,6 +1,7 @@
 # Specific        #
 ###################
-bin/
+bin/ 
+
 
 # Compiled source #
 ###################
