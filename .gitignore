@@ -1,7 +1,12 @@
 # Specific        #
 ###################
+<<<<<<< HEAD
 bin/ 
 
+=======
+bin/
+nbproject/
+>>>>>>> 804e9a5398ae4f32c7fe961542334cdd73ce9546
 
 # Compiled source #
 ###################
