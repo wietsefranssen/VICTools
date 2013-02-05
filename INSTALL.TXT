@@ -14,5 +14,5 @@ Or do it directly:
 $ make clean
 $ make NETCDF_LIB=/usr/include NETCDF_INCL=/usr/include
 
-do make debug to include debug symobls
+do make debug to include debug symbols
 $ make debug
