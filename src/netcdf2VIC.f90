@@ -207,9 +207,12 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
         !!!!!!!!!!!!!!!!!!!!! CONVERSIONS !!!!!!!!!!!!!!!!!!
         !** Do this because ISIMIP VIC-INPUT is not ALMA:
         do iVar=1,nVar
-            if (trim(Set_N2V%varName(iVar)) .eq. 'pr') then
+            if (trim(Set_N2V%varName(iVar)) .eq. 'precip' .or. trim(Set_N2V%varName(iVar)) .eq. 'pr') then
                 dataArray(:,iVar,:) = dataArray(:,iVar,:)*86400
-            elseif (trim(Set_N2V%varName(iVar)) .eq. 'tasmin' .or. trim(Set_N2V%varName(iVar)) .eq. 'tasmax') then
+            elseif (trim(Set_N2V%varName(iVar)) .eq. 'tmin' .or. &
+                  trim(Set_N2V%varName(iVar)) .eq. 'tmax' .or. &
+                  trim(Set_N2V%varName(iVar)) .eq. 'tasmin' .or. &
+                  trim(Set_N2V%varName(iVar)) .eq. 'tasmax') then
                 dataArray(:,iVar,:) = dataArray(:,iVar,:)-273.16
             elseif (trim(Set_N2V%varName(iVar)) .eq. 'ps') then
                 dataArray(:,iVar,:) = dataArray(:,iVar,:)/1000
@@ -259,7 +262,10 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
                     do iVar=1,nVar
                         iData = int(dataArray(iCel,iVar,iTime)*Set_N2V%varBinMultipl(iVar))
                         if (iData .lt. 0) then
-                            if (trim(Set_N2V%varName(iVar)) .eq. 'tasmin' .or. trim(Set_N2V%varName(iVar)) .eq. 'tasmax') then
+                            if (trim(Set_N2V%varName(iVar)) .eq. 'tmin' .or. &
+                              trim(Set_N2V%varName(iVar)) .eq. 'tmax' .or. &
+                              trim(Set_N2V%varName(iVar)) .eq. 'tasmin' .or. &
+                              trim(Set_N2V%varName(iVar)) .eq. 'tasmax') then
                                ! do nothing
                             else
                                 iData = 0
