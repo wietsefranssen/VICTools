@@ -63,6 +63,11 @@
         <rebuildPropChanged>false</rebuildPropChanged>
       </toolsSet>
       <compileType>
+        <cTool>
+          <incDir>
+            <pElem>include</pElem>
+          </incDir>
+        </cTool>
       </compileType>
       <item path="include/functions.h" ex="false" tool="3" flavor2="0">
       </item>
