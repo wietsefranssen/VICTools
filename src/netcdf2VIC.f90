@@ -52,6 +52,11 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
     real(kind = 4), allocatable     :: ncData(:,:,:)
     real(kind = 4), allocatable     :: ncDataMask(:,:)
     real(kind = 4), allocatable     :: dataMask(:,:)
+    real(kind = 8), allocatable     :: r8aLat(:),r8aLon(:)
+    real(kind = 8), allocatable     :: r8dataArray(:,:,:)
+    real(kind = 8), allocatable     :: r8ncData(:,:,:)
+    real(kind = 8), allocatable     :: r8ncDataMask(:,:)
+    real(kind = 8), allocatable     :: r8dataMask(:,:)
     integer(kind = 2), allocatable  :: ll2xy(:,:)
     integer(kind = 4), allocatable  :: parts(:)
     integer(kind = 2)               :: iData
@@ -59,6 +64,7 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
     integer(kind = 4), allocatable  ::ncStart(:,:)
     integer(kind = 4), allocatable  ::ncCount(:,:)
     integer                 :: startPos,startPosPart1
+    integer  :: iXtype
 
     !! Configs:
     Set_N2V%lonMin              = -179.75
@@ -115,12 +121,17 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
     ! Read the length of the dimensions.
     call check( nf90_inquire_dimension(ncid, dimidLon, len = nLonTmp) )
     call check( nf90_inquire_dimension(ncid, dimidLat, len = nLatTmp) )
+
+
+    
+    
     if(.not.allocated(aLon))               allocate(aLon           (nLonTmp))
     if(.not.allocated(aLat))               allocate(aLat           (nLatTmp))
     ! Inq the variable.
     call check( nf90_inq_varid(ncid, "lon", varidLon) )
     call check( nf90_inq_varid(ncid, "lat", varidLat) )
     call check( nf90_inq_varid(ncid, trim(Set_N2V%varNameMask), varidData) )
+
     ! Read data from the file.
     call check( nf90_get_var(ncid, varidLon, aLon ) )
     call check( nf90_get_var(ncid, varidLat, aLat ) )
@@ -179,20 +190,69 @@ SUBROUTINE netcdf2vic(Set_N2V, cConfigFile, nVar)
             call check( nf90_inquire_dimension(ncid, dimidLon, len = nLonTmp) )
             call check( nf90_inquire_dimension(ncid, dimidLat, len = nLatTmp) )
             call check( nf90_inquire_dimension(ncid, dimidTime, len = nTimeTmp) )
-            if(.not.allocated(aLon))               allocate(aLon           (nLonTmp))
-            if(.not.allocated(aLat))               allocate(aLat           (nLatTmp))
             ! Inq the variable.
             call check( nf90_inq_varid(ncid, "lon", varidLon) )
             call check( nf90_inq_varid(ncid, "lat", varidLat) )
             call check( nf90_inq_varid(ncid, trim(Set_N2V%varName(iVar)) , varidData) )
-            ! Read data from the file.
-            call check( nf90_get_var(ncid, varidLon, aLon ) )
-            call check( nf90_get_var(ncid, varidLat, aLat ) )
+
+            if(.not.allocated(aLon))               allocate(aLon           (nLonTmp))
+            if(.not.allocated(aLat))               allocate(aLat           (nLatTmp))
             if(.not.allocated(ncData))             allocate(ncData         (nLonTmp,nLatTmp,nTimePart))
-            call check( nf90_get_var(ncid, varidData, ncData(:,:,:) ,ncStart(iPart,:),ncCount(iPart,:) ) )
+
+
+            ! Inq the variable type.
+            call check( nf90_inquire_variable(ncid, varidLon, xtype = iXtype) )
+            if(iXtype == 6) then
+              !print *,'Type: long (real*8)'
+              if(.not.allocated(r8aLon))               allocate(r8aLon           (nLonTmp))
+              ! Read data from the file.
+              call check( nf90_get_var(ncid, varidLon, r8aLon ) )
+              aLon=real(r8aLon)
+              if(allocated(r8aLon))                 deallocate(r8aLon)
+            else
+              !print *,'Type: float (real*4)'
+              ! Read data from the file.
+              call check( nf90_get_var(ncid, varidLon, aLon ) )
+            endif
+
+            ! Inq the variable type.
+            call check( nf90_inquire_variable(ncid, varidLat, xtype = iXtype) )
+            if(iXtype == 6) then
+              !print *,'Type: long (real*8)'
+              if(.not.allocated(r8aLat))               allocate(r8aLat           (nLatTmp))
+              ! Read data from the file.
+              call check( nf90_get_var(ncid, varidLat, r8aLat ) )
+              aLat=real(r8aLat)
+              if(allocated(r8aLat))                 deallocate(r8aLat)
+            else
+              !print *,'Type: float (real*4)'
+              ! Read data from the file.
+              call check( nf90_get_var(ncid, varidLat, aLat ) )
+            endif
+
+            
+            ! Inq the variable type.
+            call check( nf90_inquire_variable(ncid, varidData, xtype = iXtype) )
+            if(iXtype == 6) then
+              !print *,'Type: long (real*8)'
+              if(.not.allocated(r8ncData))             allocate(r8ncData         (nLonTmp,nLatTmp,nTimePart))
+              call check( nf90_get_var(ncid, varidData, r8ncData(:,:,:) ,ncStart(iPart,:),ncCount(iPart,:) ) )
+              ncData=real(r8ncData)
+              if(allocated(r8ncData))                 deallocate(r8ncData)
+            else
+              !print *,'Type: float (real*4)'
+              ! Read data from the file.
+              call check( nf90_get_var(ncid, varidData, ncData(:,:,:) ,ncStart(iPart,:),ncCount(iPart,:) ) )
+            endif
+            
+            
+            
+            
+ 
+ 
             ! Close the file.
             call check( nf90_close(ncid) )
-
+ 
             !** re-order data array
             if(.not.allocated(ll2xy))              allocate(ll2xy          (ncells,2))
             call calc_ll2xy(ll2xy,aLon,aLat,dataMask,ncells,nLonTmp,nLatTmp)
