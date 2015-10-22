@@ -9,7 +9,6 @@ packages <- c("argparse", "ncdf4")
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
   install.packages(setdiff(packages, rownames(installed.packages())))  
 }
-
 suppressPackageStartupMessages(library("argparse"))
 
 # create parser object
@@ -25,8 +24,6 @@ parser$add_argument("-s", "--sellonlatbox", nargs=4, type="double",
 # parser$add_argument("-c", "--count", type="integer", default=5, 
 #                     help="Number of random normals to generate [default %(default)s]",
 #                     metavar="number")
-# parser$add_argument("--generator", default="rnorm", 
-#                     help = "Function to generate random deviates [default \"%(default)s\"]")
 # parser$add_argument("--mean", default=0, type="double",
 #                     help="Mean if generator == \"rnorm\" [default %(default)s]")
 # parser$add_argument("--sd", default=1, type="double",
@@ -35,76 +32,97 @@ parser$add_argument("-s", "--sellonlatbox", nargs=4, type="double",
 
 ## Convert VIC things
 
-# get command line options, if help option encountered print help and exit,
-# otherwise if options not found on command line then set defaults, 
-args <- parser$parse_args()
-parser$print_usage()
-
-
-write("Create domain file...", stdout())
-# print some progress messages to stderr
-if ( args$verbose ) { 
-  write("writing some verbose output to standard error...\n", stderr()) 
-}
-
-get_script_arguments <- function(){
+if (interactive()) {
+  args<-NULL
+  args$verbose <- TRUE
   args$input <- "./Precip_1day.nc4"
   args$output <- "./domain.nc4"
   args$sellonlatbox <- c(-179.75, 179.75, -89.75, 89.75)
   args$sellonlatbox <- c(-24.25, 39.75, 33.25, 71.75)
   args$sellonlatbox <- c(5.25, 7.25, 51.25, 52.75)
   setwd("/media/psf/Home/Desktop/WERK/VIC_params/vic_convert")
-  return(args)
+} else {
+  # get command line options, if help option encountered print help and exit,
+  # otherwise if options not found on command line then set defaults, 
+  args <- parser$parse_args()
 }
 
-generate <- function(){
-  # do some operations based on user input
-  if( args$generator == "rnorm") {
-    cat(paste(rnorm(args$count, mean=args$mean, sd=args$sd), collapse="\n"))
-  } else {
-    cat(paste(do.call(args$generator, list(args$count)), collapse="\n"))
-  }
-  cat("\n")
+# print some progress messages to stderr
+if ( args$verbose ) { 
+  write("writing some verbose output to standard error...\n", stderr()) 
 }
 
-#args<-get_script_arguments() # enable this line if running from script and not from commandline
-write(paste0("Current directory: ", getwd()), stdout())
+if ( is.null(args$input) && is.null(args$sellonlatbox)) {
+  parser$print_help()
+  stop("To less arguments...", call. = FALSE)
+}
 
-write(paste0("File: ",args$input), stdout())
+if (!is.null(args$sellonlatbox)) {
+  lonlatbox<-args$sellonlatbox
+}
 
-lonlatbox<-args$sellonlatbox
-print(lonlatbox)
+
+write(paste0("INFO TO BE USED: "), stdout())
+write(paste0("Working directory         = ", getwd()), stdout())
+
+if (is.null(args$input)) {
+  tempInfo <- "No inFile given, so no mask will be used!"
+} else {
+  tempInfo <- args$input
+}
+write(paste0("inFile (mask)             = ",tempInfo), stdout())
+
+if (is.null(args$output)) {
+  args$output <- "output.nc4"
+  tempInfo <- paste0("No outFile given, so standard filename will be used: '", args$output, "'")
+} else {
+  tempInfo <- args$output
+}
+write(paste0("outFile (domain file)     = ",tempInfo), stdout())
+
+if (is.null(args$sellonlatbox)) {
+  write(paste0("Lat/lon info              = No lonlatbox given, so maximum extend from mask-file be used..."), stdout())
+} else {
+  write(paste0("Lon (from 'sellonlatbox') = ", lonlatbox[1], " to ", lonlatbox[2]), stdout())
+  write(paste0("Lat (from 'sellonlatbox') = ", lonlatbox[3], " to ", lonlatbox[4]), stdout())
+}
+
+write("", stdout())
 
 
 suppressPackageStartupMessages(library("ncdf4"))
 
-
-
 # READ FROM NETCDF
-ncin <- nc_open( filename = args$input)
-ncInLon <- ncvar_get(ncin, varid = "lon")
-ncInLat <- ncvar_get(ncin, varid = "lat")
-ncInData <- ncvar_get(ncin)
-ncInData[!is.na(ncInData)] <- 1
-#ncInData[is.na(ncInData)] <- 0
+if (!is.null(args$input)) {
+  ncin <- nc_open( filename = args$input)
+  ncInLon <- ncvar_get(ncin, varid = "lon")
+  ncInLat <- ncvar_get(ncin, varid = "lat")
+  ncInData <- ncvar_get(ncin)
+  ncInData[!is.na(ncInData)] <- 1
+  
+  
+  if (is.null(args$sellonlatbox)) {
+    lonlatbox<-NULL
+    lonlatbox[1]<-ncInLon[1]
+    lonlatbox[2]<-ncInLon[length(ncInLon)]
+    lonlatbox[3]<-ncInLat[1]
+    lonlatbox[4]<-ncInLat[length(ncInLat)]
+  }
+  
+  ncMask<-ncInData[which(ncInLon==lonlatbox[1]):which(ncInLon==lonlatbox[2]),which(ncInLat==lonlatbox[3]):which(ncInLat==lonlatbox[4])]
+} 
 
-ncMask<-ncInData[which(ncInLon==lonlatbox[1]):which(ncInLon==lonlatbox[2]),which(ncInLat==lonlatbox[3]):which(ncInLat==lonlatbox[4])]
 
-
-
-
-
-
-
-
-
-
-
+write(paste0("OUTPUT: "), stdout())
+write(paste0("Lon                       = ", lonlatbox[1], " to ", lonlatbox[2]), stdout())
+write(paste0("Lat                       = ", lonlatbox[3], " to ", lonlatbox[4]), stdout())
+write("", stdout())
 
 # WRITE TO NETCDF
+write(paste0("Creating domain file ('", args$output ,"')...\n"), stdout())
 resolution=0.5
-lons<-seq(args$sellonlatbox[1],args$sellonlatbox[2],resolution)
-lats<-seq(args$sellonlatbox[3],args$sellonlatbox[4],resolution)
+lons<-seq(lonlatbox[1],lonlatbox[2],resolution)
+lats<-seq(lonlatbox[3],lonlatbox[4],resolution)
 
 xcs<-matrix(lons, ncol=length(lats), nrow=length(lons), byrow = FALSE)
 ycs<-matrix(lats, ncol=length(lats), nrow=length(lons), byrow = TRUE)
@@ -114,15 +132,16 @@ fracs<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 masks<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 run_cellss<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 
-if (length(args$input) > 0) {
-  write("NetCDF mask applied!\n",stdout())
-
+if (!is.null(args$input)) {
+  #write("NetCDF mask applied!\n",stdout())
+  
   # Makout data
   areas[is.na(ncMask)] <- 0
   fracs[is.na(ncMask)] <- 0
   masks[is.na(ncMask)] <- 0
   run_cellss[is.na(ncMask)] <- 0
 }
+
 # Write to NetCDF
 dimLon <- ncdim_def(name = "ni",units = "",vals = c(1:length(lons)), create_dimvar = FALSE )
 dimLat <- ncdim_def(name = "nj",units = "",vals = c(1:length(lats)), create_dimvar = FALSE )
@@ -153,3 +172,4 @@ ncvar_put( ncout, varRun_cell, run_cellss )
 
 # close the netcdf
 nc_close(ncout)
+write("DONE!", stdout())
