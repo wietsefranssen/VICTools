@@ -21,8 +21,17 @@ ARCHIVE=ar rs
 F_DEBUGFLAGS=-g 
 F_OPTFLAGS=-O3 -DPC_LINUX1
 
+
+ifeq ($(strip $(NETCDF_LIB)),)
+LIBS     := -L /usr/lib -lnetcdff
+else
 LIBS     := -L$(shell echo $(NETCDF_LIB)) -lnetcdff
+endif
+ifeq ($(strip $(NETCDF_LIB)),)
+INCLUDES := -I /usr/include
+else
 INCLUDES := -I$(shell echo $(NETCDF_INCL))
+endif
 
 include ./rules.mk
 
