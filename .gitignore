@@ -15,3 +15,5 @@ vignettes/*.pdf
 #Temporarily
 Precip_1day.nc4
 *.nc4
+
+/build/
