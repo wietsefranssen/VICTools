@@ -31,7 +31,7 @@ printInfo (char *programName) {
   printf ("                 give per output type the method:\n");
   printf ("             s sum of all days per month\n");
   printf ("             a average of the month\n");
-  printf ("             eg: -d 1961_01_ddmmm\n\n");
+  printf ("             eg: -d 1961_01_ssaas\n\n");
   printf ("eg: %s file.bin -t iiffu -m 2\n",programName);
   printf ("     this means: Read the file 'file.bin' and plot the output\n ");
   printf ("                 to the standard output\n");
@@ -48,7 +48,7 @@ main (int argc, char *argv[])
   // file
   long int              fileSize;
   struct stat           file_status;
-  char                  fileName[512];
+  char                  fileName[2048];
   int                   lineSize;
   int                   nLine, iLine;
   // nr of variables
