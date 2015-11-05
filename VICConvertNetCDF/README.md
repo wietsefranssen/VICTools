@@ -18,3 +18,7 @@ Or do it directly:
 
 do make debug to include debug symbols
 `$ make debug`
+
+## Usage
+
+  `./bin/VICCONVERT VIC2bignetcdf ./JobScripts/fluxesSortMonthly.txt`
