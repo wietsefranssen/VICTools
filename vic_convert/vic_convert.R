@@ -2,6 +2,9 @@
 # Clean-up
 rm(list = ls())
 
+# select cran mirror
+options(repos = c(CRAN = "http://cran-mirror.cs.uu.nl/"))
+
 # List of packages
 packages <- c("argparse", "ncdf4", "geosphere")
 
