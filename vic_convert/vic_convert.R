@@ -3,7 +3,7 @@
 rm(list = ls())
 
 # List of packages
-packages <- c("argparse", "ncdf4")
+packages <- c("argparse", "ncdf4", "geosphere")
 
 # Check if packages exist. If not, install them
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
@@ -40,7 +40,7 @@ if (interactive()) {
   args$sellonlatbox <- c(-179.75, 179.75, -89.75, 89.75)
   args$sellonlatbox <- c(-24.25, 39.75, 33.25, 71.75)
   args$sellonlatbox <- c(5.25, 7.25, 51.25, 52.75)
-  setwd("/media/psf/Home/Desktop/WERK/VIC_params/vic_convert")
+  setwd("/home/wietse/Projects/Project_VIC/VIC_testsetups/classic_test/vic_tools/vic_convert")
 } else {
   # get command line options, if help option encountered print help and exit,
   # otherwise if options not found on command line then set defaults, 
@@ -91,6 +91,7 @@ write("", stdout())
 
 
 suppressPackageStartupMessages(library("ncdf4"))
+suppressPackageStartupMessages(library("geosphere"))
 
 # READ FROM NETCDF
 if (!is.null(args$input)) {
@@ -132,11 +133,23 @@ fracs<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 masks<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 run_cellss<-matrix(ncol=length(lats), nrow=length(lons), data = 1)
 
+# Find Area per lat/lon
+for(iLon in 1:length(lons)) {
+  for(iLat in 1:length(lats)) {
+    p <- rbind(c(lons[iLon]-resolution/2,lats[iLat]-resolution/2), 
+               c(lons[iLon]+resolution/2,lats[iLat]-resolution/2),
+               c(lons[iLon]+resolution/2,lats[iLat]+resolution/2),
+               c(lons[iLon]-resolution/2,lats[iLat]+resolution/2))
+    
+    areas[iLon,iLat]<-areaPolygon(p)
+  }
+}
+
 if (!is.null(args$input)) {
   #write("NetCDF mask applied!\n",stdout())
   
   # Makout data
-  areas[is.na(ncMask)] <- 0
+  areas[is.na(ncMask)] <- NA
   fracs[is.na(ncMask)] <- 0
   masks[is.na(ncMask)] <- 0
   run_cellss[is.na(ncMask)] <- 0

@@ -69,3 +69,4 @@ Precip_1day.nc4
 *.nc4
 
 /build/
+/bin2ascii/dist/
