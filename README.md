@@ -22,3 +22,10 @@ You van find the tool in the folder:
 `vic_convert`
 
 This tool makes a domain NetCDF file for VIC 5.x
+
+### RVICParams2Latlon
+You van find the tool in the folder: 
+
+`RVICParams2Latlon`
+
+This R-tool converts a RVIC netcdf-parameter file into a latlon based RVIC netcdf-parameter file
