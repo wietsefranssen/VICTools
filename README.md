@@ -1,6 +1,6 @@
-# VICTools
+# victools
 
-'VICTools' is an R package with tools for VIC-WSG.
+'victools' is an R package with tools for VIC-WSG.
 
 It will contain the following functions:
 * (TODO) `VIC4to5`
@@ -10,15 +10,15 @@ It will contain the following functions:
 
 ### Required R-packages
 
-Before installing VICTools be sure that the following R-packages are installed
+Before installing victools be sure that the following R-packages are installed
 * devtools (to install the package from github)
 * ncdf4
 
-### Install VICTools
+### Install victools
 
 ```R
 library("devtools")
-install_github("wietsefranssen/VICTools")
+install_github("wietsefranssen/victools")
 ```
   
 ## Usage
@@ -26,7 +26,7 @@ install_github("wietsefranssen/VICTools")
 ### Load library
 
 ```R
-library("VICTools")
+library("victools")
 ```
   
 ## OLD Tools
