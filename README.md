@@ -5,6 +5,24 @@
 It will contain the following functions:
 * (TODO) VIC4to5: This function will convert the vic 4.x input ascii-files in (not the forcing!) to VIC-WSG (VIC 5) NetCDF format.
 
+## Installation
+
+### required R-packages
+
+* devtools (to install the package from github)
+* ncdf4
+
+### install VICTools
+
+  library("devtools")
+  install_github("wietsefranssen/VICTools")
+  
+## Usage
+
+### Load library
+
+  library("VICTools")
+
 ## OLD Tools
 
 The old vic tools are moved to the oldTools branch and will no longer be maintained
