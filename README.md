@@ -7,22 +7,27 @@ It will contain the following functions:
 
 ## Installation
 
-### required R-packages
+### Required R-packages
 
+Before installing VICTools be sure that the following R-packages are installed
 * devtools (to install the package from github)
 * ncdf4
 
-### install VICTools
+### Install VICTools
 
-  library("devtools")
-  install_github("wietsefranssen/VICTools")
+```R
+library("devtools")
+install_github("wietsefranssen/VICTools")
+```
   
 ## Usage
 
 ### Load library
 
-  library("VICTools")
-
+```R
+library("VICTools")
+```
+  
 ## OLD Tools
 
 The old vic tools are moved to the oldTools branch and will no longer be maintained
