@@ -10,10 +10,10 @@ vic4to5(soilfile)
 \item{soilfile}{the VIC-4 soilfile}
 }
 \value{
-NetCDF input file for VIC-WSG
+NetCDF input file for VICWUR
 }
 \description{
-Convert VIC version 4.x ascii input data to VIC-WSG (VIC version 5.x) NetCDF input data
+Convert VIC version 4.x ascii input data to VICWUR (VIC version 5.x) NetCDF input data
 }
 \examples{
 vic4to5()

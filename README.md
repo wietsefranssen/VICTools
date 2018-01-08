@@ -1,10 +1,10 @@
 # victools
 
-'victools' is an R package with tools for VIC-WSG.
+'victools' is an R package with tools for VICWUR.
 
 It will contain the following functions:
 * (TODO) `VIC4to5`
-    This function will convert the vic 4.x input ascii-files in (not the forcing!) to VIC-WSG (VIC 5) NetCDF format.
+    This function will convert the vic 4.x input ascii-files in (not the forcing!) to VICWUR (VIC 5) NetCDF format.
 
 ## Installation
 

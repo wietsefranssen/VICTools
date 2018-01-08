@@ -1,10 +1,10 @@
 Package: victools
 Version: 0.1.0
 Type: Package
-Title: An R package with tools for VIC-WSG
+Title: An R package with tools for VICWUR
 Author: Wietse Franssen
 Maintainer: Wietse Franssen <wietse.franssen@wur.nl>
-Description: This package contains several tools for the VIC-WSG model.
+Description: This package contains several tools for the VICWUR model.
 Depends: R (>= 3.0),
     ncdf4
 License: GPL (>=2)
